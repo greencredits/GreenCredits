@@ -1,0 +1,22 @@
+{
+  "name": "greencredits",
+  "version": "1.0.0",
+  "description": "Waste reporting system for citizens and municipalities",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["waste", "reporting", "municipality", "environment"],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "multer": "^2.0.2"
+  }
+}

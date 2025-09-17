@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GreenCredits — Clean Tomorrow, Powered by You</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js (for dashboard preview) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <div class="logo" onclick="scrollToTop()" role="button" tabindex="0">
+        <span class="logo-mark">🌿</span>
+        <span class="logo-text">GreenCredits</span>
+      </div>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#features" class="nav-link">Solutions</a>
+        <a href="#journey" class="nav-link">How it Works</a>
+        <a href="#municipality" class="nav-link">Municipality</a>
+        <a href="#impact" class="nav-link">Impact</a>
+        <a href="#about" class="nav-link">About</a>
+      </nav>
+
+      <div class="header-actions">
+        <!-- Before login -->
+        <div id="authButtons">
+          <button class="btn btn-outline" id="loginBtn">Login</button>
+          <button class="btn btn-primary" id="signupBtn">Sign Up</button>
+        </div>
+
+        <!-- After login -->
+        <div id="userWelcome" style="display:none; align-items:center; gap:10px;">
+          <span id="welcomeUser" style="font-weight:600; color:#0b6b43;"></span>
+          <button class="btn btn-outline" id="logoutBtn">Logout</button>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="container hero-inner">
+      <div class="hero-left">
+        <h1>Clean Tomorrow, Powered by You.</h1>
+        <p class="lead">Report waste hotspots, track action, and earn rewards — citizens and cities working together for cleaner streets.</p>
+        <div class="hero-ctas">
+          <button class="btn btn-primary" onclick="openSignup()">Join the Movement</button>
+          <button class="btn btn-ghost" onclick="scrollToSection('citizen')">Report Waste</button>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-item"><strong>📍</strong> GPS verified reports</div>
+          <div class="trust-item"><strong>⚡</strong> AI-assisted validation</div>
+          <div class="trust-item"><strong>🏆</strong> Rewards & badges</div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <!-- stylized phone mockup -->
+        <div class="phone-mockup">
+          <div class="phone-top"></div>
+          <div class="phone-screen">
+            <div class="mock-header">GreenCredits</div>
+            <div class="mock-card">Report waste in one tap 📸</div>
+            <div class="mock-stat-row">
+              <div class="stat">12 new reports</div>
+              <div class="stat">5 hotspots</div>
+            </div>
+            <div class="mock-graph"></div>
+          </div>
+          <div class="phone-bottom"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2 class="section-title">Key Highlights</h2>
+      <div class="features-grid">
+        <article class="card feature">
+          <div class="icon">📸</div>
+          <h3>Citizen Reports</h3>
+          <p>Easily capture & submit waste hotspots with photos and location.</p>
+        </article>
+
+        <article class="card feature">
+          <div class="icon">🎖️</div>
+          <h3>Rewards System</h3>
+          <p>Earn Green Credits, redeemable for vouchers and recognition.</p>
+        </article>
+
+        <article class="card feature">
+          <div class="icon">📊</div>
+          <h3>Municipality Dashboard</h3>
+          <p>Heatmaps, analytics and task assignment to optimize pickups.</p>
+        </article>
+
+        <article class="card feature">
+          <div class="icon">🕊️</div>
+          <h3>Transparent Tracking</h3>
+          <p>End-to-end visibility for citizens and municipal teams.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNEY -->
+  <section id="journey" class="section light">
+    <div class="container">
+      <h2 class="section-title">Your Journey</h2>
+      <div class="journey">
+        <div class="step">
+          <div class="bubble">1</div>
+          <h4>Capture</h4>
+          <p>Snap a photo of the hotspot with automatic GPS tagging.</p>
+        </div>
+        <div class="step">
+          <div class="bubble">2</div>
+          <h4>Submit</h4>
+          <p>Send it with a short note — our system validates the report.</p>
+        </div>
+        <div class="step">
+          <div class="bubble">3</div>
+          <h4>Track</h4>
+          <p>Watch progress, get notifications, and see when it's resolved.</p>
+        </div>
+        <div class="step">
+          <div class="bubble">4</div>
+          <h4>Earn</h4>
+          <p>Receive credits and badges for verified contributions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CITIZEN MINI-APP -->
+  <section id="citizen" class="section">
+    <div class="container">
+      <h2 class="section-title">Citizen App — Try the Flow</h2>
+
+      <div class="mini-app">
+        <div class="app-sidebar">
+          <button class="app-tab active" data-tab="report">Report Issue</button>
+          <button class="app-tab" data-tab="myreports">My Reports</button>
+          <button class="app-tab" data-tab="leader">Leaderboard</button>
+        </div>
+
+        <div class="app-main">
+          <div id="report" class="app-panel active">
+            <form id="reportForm" class="report-form">
+              <label>Photo 
+                <input type="file" id="reportPhoto" name="photo" class="field" accept="image/*" required>
+              </label>
+
+              <label>Location
+                <input type="text" id="reportLocation" class="field" placeholder="Enter address (or current location)">
+                <div style="margin-top:6px;">
+                  <button type="button" id="useLocationBtn" class="btn btn-outline">Use My Location</button>
+                  <button type="button" id="clearLocationBtn" class="btn btn-ghost">Clear</button>
+                </div>
+              </label>
+
+              <label>Description
+                <textarea id="reportDesc" class="field" rows="3" placeholder="Short note (optional)"></textarea>
+              </label>
+
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Submit Report</button>
+                <button class="btn btn-outline" type="button" onclick="clearReportForm()">Clear</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="myreports" class="app-panel">
+            <div class="reports-list" id="reportsList">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div id="leader" class="app-panel">
+            <div class="leaderboard">
+              <div class="leader-item"><span class="rank">1</span> Aisha — <strong>1,320 pts</strong></div>
+              <div class="leader-item"><span class="rank">2</span> Ravi — <strong>980 pts</strong></div>
+              <div class="leader-item"><span class="rank">3</span> Priya — <strong>870 pts</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MUNICIPALITY -->
+  <section id="municipality" class="section light">
+    <div class="container">
+      <h2 class="section-title">Municipality Solutions</h2>
+      <div class="municipality-grid">
+        <div class="mun-left">
+          <ul class="mun-features">
+            <li><strong>Live Hotspot Map</strong> — See clusters and prioritize routes</li>
+            <li><strong>Analytics</strong> — Identify trends, peak times and areas</li>
+            <li><strong>Task Assignment</strong> — Create cleanup tasks & track teams</li>
+          </ul>
+
+          <button class="btn btn-primary" onclick="window.location.href='admin.html'">Explore Municipality Portal</button>
+        </div>
+
+        <div class="mun-right">
+          <div class="stat-cards">
+            <div class="stat-card">
+              <div class="stat-value">128</div>
+              <div class="stat-label">Reports Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">46</div>
+              <div class="stat-label">Active Tasks</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">72%</div>
+              <div class="stat-label">Resolved This Week</div>
+            </div>
+          </div>
+
+          <div class="charts">
+            <canvas id="reportsChart" height="160"></canvas>
+          </div>
+
+          <div class="heatmap-placeholder" aria-hidden="true">Heatmap preview (interactive map in portal)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP DOWNLOAD -->
+  <section class="section download">
+    <div class="container download-inner">
+      <div class="download-left">
+        <h2>GreenCredits in your pocket</h2>
+        <p>One-tap reporting, real-time updates, leaderboards and rewards — available on mobile.</p>
+        <div class="store-buttons">
+          <button class="store-btn"> App Store</button>
+          <button class="store-btn">▶ Google Play</button>
+        </div>
+      </div>
+      <div class="download-right">
+        <div class="phone-large-mockup">
+          <!-- decorative mockup -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT -->
+  <section id="impact" class="section light">
+    <div class="container">
+      <h2 class="section-title">Community Impact</h2>
+      <div class="impact-grid">
+        <div class="impact-item">
+          <div class="big">500+</div>
+          <div class="small">hotspots resolved this month</div>
+        </div>
+        <div class="impact-item">
+          <div class="big">1,200</div>
+          <div class="small">active citizens reporting</div>
+        </div>
+        <div class="impact-item">
+          <div class="big">40%</div>
+          <div class="small">improvement in response time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="section">
+    <div class="container">
+      <h2 class="section-title">Who We Are</h2>
+      <div class="about-grid">
+        <div class="about-card">
+          <h3>Our Mission</h3>
+          <p>Enable transparent, fast and rewarding waste reporting that helps cities act smarter and citizens feel valued.</p>
+        </div>
+
+        <div class="about-card">
+          <h3>Our Vision</h3>
+          <p>Cities where waste management is efficient, accountable and community-driven.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <h4>GreenCredits</h4>
+        <p>Building cleaner cities through community and data.</p>
+      </div>
+
+      <div>
+        <h5>For Citizens</h5>
+        <ul>
+          <li><a href="#citizen">Report</a></li>
+          <li><a href="#features">Rewards</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h5>For Municipalities</h5>
+        <ul>
+          <li><a href="#municipality">Dashboard</a></li>
+          <li><a href="#municipality">Analytics</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h5>Contact</h5>
+        <p>hello@greencredits.org</p>
+        <div class="socials">
+          <a href="#" aria-label="Facebook">FB</a>
+          <a href="#" aria-label="X">X</a>
+          <a href="#" aria-label="Instagram">IG</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container copyright">
+      © 2025 GreenCredits · Together for Tomorrow
+    </div>
+  </footer>
+
+  <!-- LOGIN / SIGNUP MODALS -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+  <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+    <div class="modal-card">
+      <button class="modal-close" aria-label="Close" onclick="closeModal()">✕</button>
+      <h3>Sign in to GreenCredits</h3>
+      <form id="loginForm">
+        <label>Email
+          <input class="field" id="loginEmail" type="email" required>
+        </label>
+        <label>Password
+          <input class="field" id="loginPassword" type="password" required>
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Sign In</button>
+          <button class="btn btn-outline" type="button" onclick="openSignup()">Create account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="signupModal" role="dialog" aria-modal="true" aria-hidden="true" style="display:none;">
+    <div class="modal-card">
+      <button class="modal-close" aria-label="Close" onclick="closeModal()">✕</button>
+      <h3>Create an account</h3>
+      <form id="signupForm">
+        <label>Name
+          <input class="field" id="signupName" type="text" required>
+        </label>
+        <label>Email
+          <input class="field" id="signupEmail" type="email" required>
+        </label>
+        <label>Password
+          <input class="field" id="signupPassword" type="password" required>
+        </label>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Sign Up</button>
+          <button class="btn btn-outline" type="button" onclick="openLogin()">Already have account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
