@@ -20,6 +20,7 @@ if (!fs.existsSync(uploadsDir)) {
 // In-memory data storage
 let users = [];
 let reports = [];
+let admins = []; // Add admin storage
 let reportIdCounter = 1;
 
 // Middleware
@@ -146,6 +147,82 @@ app.post("/api/logout", (req, res) => {
     }
     res.json({ success: true });
   });
+});
+
+// -------- ADMIN AUTH ROUTES --------
+
+// Admin signup
+app.post("/api/admin/signup", (req, res) => {
+  try {
+    const { name, email, password, organizationCode } = req.body;
+    
+    if (!name || !email || !password || !organizationCode) {
+      return res.json({ success: false, error: "All fields are required" });
+    }
+
+    // Simple organization code check (you can make this more secure)
+    const validOrgCodes = ['MUNI2024', 'ADMIN123', 'GREENCITY'];
+    if (!validOrgCodes.includes(organizationCode)) {
+      return res.json({ success: false, error: "Invalid organization code" });
+    }
+
+    if (admins.find(a => a.email === email)) {
+      return res.json({ success: false, error: "Admin already exists with this email" });
+    }
+
+    const newAdmin = { 
+      id: admins.length + 1, 
+      name: name.trim(), 
+      email: email.trim().toLowerCase(), 
+      password,
+      organizationCode,
+      createdAt: new Date().toISOString()
+    };
+    
+    admins.push(newAdmin);
+    req.session.admin = { id: newAdmin.id, name: newAdmin.name, email: newAdmin.email };
+    
+    res.json({ success: true, admin: req.session.admin });
+  } catch (error) {
+    res.json({ success: false, error: "Server error during admin signup" });
+  }
+});
+
+// Admin login
+app.post("/api/admin/login", (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.json({ success: false, error: "Email and password are required" });
+    }
+
+    const admin = admins.find(a => a.email === email.trim().toLowerCase() && a.password === password);
+    
+    if (!admin) {
+      return res.json({ success: false, error: "Invalid email or password" });
+    }
+
+    req.session.admin = { id: admin.id, name: admin.name, email: admin.email };
+    res.json({ success: true, admin: req.session.admin });
+  } catch (error) {
+    res.json({ success: false, error: "Server error during admin login" });
+  }
+});
+
+// Admin logout
+app.post("/api/admin/logout", (req, res) => {
+  req.session.admin = null;
+  res.json({ success: true });
+});
+
+// Get current admin
+app.get('/api/admin/me', (req, res) => {
+  if (req.session.admin) {
+    res.json({ success: true, admin: req.session.admin });
+  } else {
+    res.json({ success: false, admin: null });
+  }
 });
 
 // Submit report

@@ -133,7 +133,10 @@
   .field{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);margin-top:8px}
   .report-form label{display:block;margin-bottom:10px}
   .form-actions{display:flex;gap:10px;margin-top:10px}
-  
+  .store-btn {
+  text-decoration: none;   /* removes underline */
+  }
+
   /* municipality grid */
   .municipality-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
   .mun-left{padding:18px}
