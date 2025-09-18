@@ -151,60 +151,119 @@
   </section>
 
   <!-- CITIZEN MINI-APP -->
-  <section id="citizen" class="section">
-    <div class="container">
-      <h2 class="section-title">Citizen App — Try the Flow</h2>
+ <section id="citizen" class="section">
+  <div class="container">
+    <h2 class="section-title">Citizen App — Try the Flow</h2>
 
-      <div class="mini-app">
-        <div class="app-sidebar">
-          <button class="app-tab active" data-tab="report">Report Issue</button>
-          <button class="app-tab" data-tab="myreports">My Reports</button>
-          <button class="app-tab" data-tab="leader">Leaderboard</button>
+    <div class="mini-app">
+      <div class="app-sidebar">
+        <button class="app-tab active" data-tab="report">Report Issue</button>
+        <button class="app-tab" data-tab="myreports">My Reports</button>
+        <button class="app-tab" data-tab="credits">My Credits</button>
+        <button class="app-tab" data-tab="leader">Leaderboard</button>
+      </div>
+
+      <div class="app-main">
+        <div id="report" class="app-panel active">
+          <form id="reportForm" class="report-form">
+            <label>Photo 
+              <input type="file" id="reportPhoto" name="photo" class="field" accept="image/*" required>
+            </label>
+
+            <label>Location
+              <input type="text" id="reportLocation" class="field" placeholder="Enter address (or current location)">
+              <div style="margin-top:6px;">
+                <button type="button" id="useLocationBtn" class="btn btn-outline">Use My Location</button>
+                <button type="button" id="clearLocationBtn" class="btn btn-ghost">Clear</button>
+              </div>
+            </label>
+
+            <label>Description
+              <textarea id="reportDesc" class="field" rows="3" placeholder="Describe the waste issue (detailed descriptions earn bonus credits!)"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Submit Report</button>
+              <button class="btn btn-outline" type="button" onclick="clearReportForm()">Clear</button>
+            </div>
+
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 0.9rem;">
+              <strong>Earn Green Credits:</strong>
+              <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                <li>+10 credits for photo report</li>
+                <li>+5 credits with GPS location</li>
+                <li>+25 credits for quality description</li>
+                <li>+25 credits for your first report</li>
+              </ul>
+            </div>
+          </form>
         </div>
 
-        <div class="app-main">
-          <div id="report" class="app-panel active">
-            <form id="reportForm" class="report-form">
-              <label>Photo 
-                <input type="file" id="reportPhoto" name="photo" class="field" accept="image/*" required>
-              </label>
+        <div id="myreports" class="app-panel">
+          <div class="reports-list" id="reportsList">
+            <!-- populated by JS -->
+          </div>
+        </div>
 
-              <label>Location
-                <input type="text" id="reportLocation" class="field" placeholder="Enter address (or current location)">
-                <div style="margin-top:6px;">
-                  <button type="button" id="useLocationBtn" class="btn btn-outline">Use My Location</button>
-                  <button type="button" id="clearLocationBtn" class="btn btn-ghost">Clear</button>
-                </div>
-              </label>
-
-              <label>Description
-                <textarea id="reportDesc" class="field" rows="3" placeholder="Short note (optional)"></textarea>
-              </label>
-
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit">Submit Report</button>
-                <button class="btn btn-outline" type="button" onclick="clearReportForm()">Clear</button>
+        <div id="credits" class="app-panel">
+          <div id="creditsDetails">
+            <!-- populated by JS -->
+          </div>
+          <div id="badgesContainer">
+            <!-- populated by JS -->
+          </div>
+          
+          <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 16px 0; color: #10b981;">Redeem Credits</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <div style="border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">🎁</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Gift Voucher</div>
+                <div style="color: #6b7280; font-size: 0.9rem; margin-bottom: 12px;">Local store discount</div>
+                <div style="font-weight: 600; color: #10b981; margin-bottom: 12px;">100 Credits</div>
+                <button class="btn btn-outline" onclick="redeemReward('voucher', 100)" style="width: 100%; padding: 8px;">Redeem</button>
               </div>
-            </form>
-          </div>
-
-          <div id="myreports" class="app-panel">
-            <div class="reports-list" id="reportsList">
-              <!-- populated by JS -->
+              
+              <div style="border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">🌱</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Tree Sapling</div>
+                <div style="color: #6b7280; font-size: 0.9rem; margin-bottom: 12px;">Plant for the city</div>
+                <div style="font-weight: 600; color: #10b981; margin-bottom: 12px;">200 Credits</div>
+                <button class="btn btn-outline" onclick="redeemReward('tree', 200)" style="width: 100%; padding: 8px;">Redeem</button>
+              </div>
+              
+              <div style="border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">📱</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Digital Badge</div>
+                <div style="color: #6b7280; font-size: 0.9rem; margin-bottom: 12px;">Social media badge</div>
+                <div style="font-weight: 600; color: #10b981; margin-bottom: 12px;">50 Credits</div>
+                <button class="btn btn-outline" onclick="redeemReward('badge', 50)" style="width: 100%; padding: 8px;">Redeem</button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div id="leader" class="app-panel">
-            <div class="leaderboard">
-              <div class="leader-item"><span class="rank">1</span> Aisha — <strong>1,320 pts</strong></div>
-              <div class="leader-item"><span class="rank">2</span> Ravi — <strong>980 pts</strong></div>
-              <div class="leader-item"><span class="rank">3</span> Priya — <strong>870 pts</strong></div>
-            </div>
+        <div id="leader" class="app-panel">
+          <div id="leaderboardContainer">
+            <!-- populated by JS -->
+          </div>
+          
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; margin-top: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: #059669;">How to Climb the Leaderboard:</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #065f46;">
+              <li>Submit waste reports with photos (+10 credits)</li>
+              <li>Include GPS location (+5 credits)</li>
+              <li>Write detailed descriptions (+25 credits)</li>
+              <li>Get your reports verified (+15 credits)</li>
+              <li>See your reports resolved (+20 credits)</li>
+              <li>Earn badges for bonus credits (+50 credits each)</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- MUNICIPALITY -->
   <section id="municipality" class="section light">
@@ -256,13 +315,13 @@
         <div class="store-buttons">
           <!-- <button class="store-btn"> App Store</button>
           <button class="store-btn">▶ Google Play</button> -->
-          <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer" class="store-btn">
+          <a href="https://play.google.com/store/apps/details?id=com.ichangemycity.swachhbharat&hl=hi" target="_blank" rel="noopener noreferrer" class="store-btn">
             ▶ Google Play
           </a>
-          <a href="https://www.apple.com/in/app-store/" target="_blank" rel="noopener noreferrer" class="store-btn">
+          <a href="https://apps.apple.com/in/app/swachhata-mohua/id1124033628" target="_blank" rel="noopener noreferrer" class="store-btn">
               Apple store
             </a>
-
+                    
         </div>
       </div>
       <div class="download-right">

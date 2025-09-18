@@ -1,4 +1,171 @@
-// Global state
+// ==================== CREDIT SYSTEM FUNCTIONS ====================
+
+async function loadUserCredits() {
+  if (!currentUser) return;
+
+  try {
+    const response = await fetch("/api/credits", {
+      credentials: "include"
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      updateCreditsDisplay(data.credits, data.badges, data.nextBadges);
+    }
+  } catch (error) {
+    console.error('Load credits error:', error);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const response = await fetch("/api/leaderboard");
+    const data = await response.json();
+    
+    if (data.success) {
+      updateLeaderboardDisplay(data.leaderboard);
+    }
+  } catch (error) {
+    console.error('Load leaderboard error:', error);
+  }
+}
+
+function updateCreditsDisplay(credits, badges, nextBadges) {
+  // Update credits in header
+  let creditsDisplay = document.getElementById('userCredits');
+  if (!creditsDisplay) {
+    creditsDisplay = document.createElement('div');
+    creditsDisplay.id = 'userCredits';
+    creditsDisplay.style.cssText = `
+      background: linear-gradient(45deg, #10b981, #059669);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-left: 10px;
+    `;
+    const userWelcome = document.getElementById('userWelcome');
+    if (userWelcome) {
+      userWelcome.appendChild(creditsDisplay);
+    }
+  }
+  
+  creditsDisplay.innerHTML = `🌱 ${credits.totalCredits} Credits`;
+  
+  // Update badges display if on credits tab
+  const badgesContainer = document.getElementById('badgesContainer');
+  if (badgesContainer) {
+    displayBadges(badges, nextBadges, badgesContainer);
+  }
+  
+  // Update credits details if on credits tab
+  const creditsDetails = document.getElementById('creditsDetails');
+  if (creditsDetails) {
+    creditsDetails.innerHTML = `
+      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h3 style="margin: 0 0 16px 0; color: #10b981;">Your Green Credits</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+          <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: #10b981;">${credits.totalCredits}</div>
+            <div style="color: #6b7280; font-size: 0.9rem;">Total Earned</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: #059669;">${credits.availableCredits}</div>
+            <div style="color: #6b7280; font-size: 0.9rem;">Available</div>
+          </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 700; color: #ef4444;">${credits.redeemed}</div>
+            <div style="color: #6b7280; font-size: 0.9rem;">Redeemed</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function displayBadges(badges, nextBadges, container) {
+  let content = '<div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;">';
+  
+  // Earned Badges
+  content += '<h3 style="margin: 0 0 16px 0; color: #10b981;">Earned Badges</h3>';
+  if (badges && badges.length > 0) {
+    content += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px;">';
+    badges.forEach(badge => {
+      content += `
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">${badge.icon}</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">${badge.name}</div>
+          <div style="font-size: 0.8rem; opacity: 0.9;">${badge.description}</div>
+        </div>
+      `;
+    });
+    content += '</div>';
+  } else {
+    content += '<p style="color: #6b7280; margin-bottom: 24px;">No badges earned yet. Submit reports to start earning badges!</p>';
+  }
+  
+  // Next Badges
+  if (nextBadges && nextBadges.length > 0) {
+    content += '<h4 style="margin: 0 0 16px 0; color: #6b7280;">Progress Towards Next Badges</h4>';
+    content += '<div style="display: grid; gap: 12px;">';
+    nextBadges.forEach(badge => {
+      content += `
+        <div style="background: #f9fafb; padding: 12px; border-radius: 8px; border-left: 4px solid #10b981;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.5rem;">${badge.icon}</span>
+              <span style="font-weight: 600;">${badge.name}</span>
+            </div>
+            <span style="font-size: 0.9rem; color: #6b7280;">${badge.progress}/${badge.target}</span>
+          </div>
+          <div style="background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: ${badge.percentage}%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+      `;
+    });
+    content += '</div>';
+  }
+  
+  content += '</div>';
+  container.innerHTML = content;
+}
+
+function updateLeaderboardDisplay(leaderboard) {
+  const container = document.getElementById('leaderboardContainer');
+  if (!container) return;
+  
+  let content = '<div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+  content += '<h3 style="margin: 0 0 16px 0; color: #10b981;">Top Contributors</h3>';
+  
+  if (leaderboard && leaderboard.length > 0) {
+    leaderboard.forEach((user, index) => {
+      const rankIcon = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+      content += `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #e5e7eb; ${index === leaderboard.length - 1 ? 'border-bottom: none;' : ''}">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.2rem; min-width: 40px;">${rankIcon}</span>
+            <div>
+              <div style="font-weight: 600;">${user.name}</div>
+              <div style="font-size: 0.8rem; color: #6b7280;">${user.reportCount} reports • ${user.badgeCount} badges</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 700; color: #10b981;">${user.totalCredits} pts</div>
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    content += '<p style="color: #6b7280;">No leaderboard data available yet.</p>';
+  }
+  
+  content += '</div>';
+  container.innerHTML = content;
+}// Global state
 let currentUser = null;
 let currentLocation = null;
 
@@ -343,10 +510,31 @@ async function submitReportForm(e) {
     const data = await response.json();
     
     if (data.success) {
-      showNotification('Report submitted successfully!', 'success');
+      // Show success with credit information
+      let message = 'Report submitted successfully!';
+      if (data.credits && data.credits.earned > 0) {
+        message += ` You earned ${data.credits.earned} Green Credits! 🌱`;
+        
+        // Show badge notifications
+        if (data.credits.newBadges && data.credits.newBadges.length > 0) {
+          setTimeout(() => {
+            data.credits.newBadges.forEach(badge => {
+              showBadgeNotification(badge);
+            });
+          }, 1000);
+        }
+        
+        // Show credit breakdown
+        setTimeout(() => {
+          showCreditBreakdown(data.credits.breakdown);
+        }, 500);
+      }
+      
+      showNotification(message, 'success');
       e.target.reset();
       currentLocation = null;
-      loadMyReports(); // Refresh the reports list
+      loadMyReports();
+      loadUserCredits(); // Refresh credits display
     } else {
       showNotification(data.error || 'Failed to submit report', 'error');
     }
@@ -354,6 +542,98 @@ async function submitReportForm(e) {
     console.error('Submit error:', error);
     showNotification('Network error. Please try again.', 'error');
   }
+}
+
+function showBadgeNotification(badge) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 12px;
+    z-index: 1001;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    max-width: 320px;
+    font-weight: 600;
+    border: 2px solid #34d399;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 2rem;">${badge.icon}</span>
+      <div>
+        <div style="font-size: 1.1rem; margin-bottom: 4px;">New Badge Earned!</div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">${badge.name}</div>
+      </div>
+    </div>
+  `;
+  
+  // Add animation keyframes
+  if (!document.getElementById('badge-animations')) {
+    const style = document.createElement('style');
+    style.id = 'badge-animations';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'fadeOut 0.3s ease-in forwards';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 4000);
+}
+
+function showCreditBreakdown(breakdown) {
+  if (!breakdown || breakdown.length === 0) return;
+  
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    z-index: 1001;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    max-width: 300px;
+    border-left: 4px solid #10b981;
+  `;
+  
+  let content = '<div style="font-weight: 600; color: #10b981; margin-bottom: 8px;">Credits Earned:</div>';
+  breakdown.forEach(item => {
+    content += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+      <span style="font-size: 0.9rem;">${item.description}</span>
+      <span style="font-weight: 600; color: #10b981;">+${item.credits}</span>
+    </div>`;
+  });
+  
+  notification.innerHTML = content;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 5000);
 }
 
 async function loadMyReports() {
@@ -478,6 +758,10 @@ function switchTab(tabName) {
   // Load data if needed
   if (tabName === 'myreports') {
     loadMyReports();
+  } else if (tabName === 'credits') {
+    loadUserCredits();
+  } else if (tabName === 'leader') {
+    loadLeaderboard();
   }
 }
 
@@ -527,6 +811,7 @@ async function checkAuthStatus() {
       currentUser = data.user;
       updateUserUI(currentUser);
       loadMyReports();
+      loadUserCredits(); // Load credits when user is authenticated
     }
   } catch (error) {
     console.error('Auth check failed:', error);
@@ -625,3 +910,33 @@ window.closeModal = closeModal;
 window.scrollToTop = scrollToTop;
 window.scrollToSection = scrollToSection;
 window.clearReportForm = clearReportForm;
+window.redeemReward = redeemReward;
+
+// Redemption function
+async function redeemReward(rewardId, credits) {
+  if (!currentUser) {
+    showNotification('Please log in to redeem rewards', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/credits/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rewardId, credits }),
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      showNotification(`Reward redeemed! Remaining credits: ${data.remaining}`, 'success');
+      loadUserCredits(); // Refresh credits display
+    } else {
+      showNotification(data.error || 'Redemption failed', 'error');
+    }
+  } catch (error) {
+    console.error('Redemption error:', error);
+    showNotification('Network error. Please try again.', 'error');
+  }
+}
