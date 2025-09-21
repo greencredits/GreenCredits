@@ -21,9 +21,9 @@ if (!fs.existsSync(uploadsDir)) {
 let users = [];
 let reports = [];
 let admins = [];
-let userCredits = new Map(); // Store user credits: userId -> credits data
-let badges = new Map(); // Store user badges: userId -> badges array
-let transactions = []; // Credit transaction history
+let userCredits = new Map();
+let badges = new Map();
+let transactions = [];
 let reportIdCounter = 1;
 
 // Middleware
@@ -66,6 +66,22 @@ const upload = multer({
   }
 });
 
+// Auth middleware
+const requireAuth = (req, res, next) => {
+  if (!req.session.user) {
+    return res.status(401).json({ success: false, error: "Authentication required" });
+  }
+  next();
+};
+
+// Admin auth middleware
+const requireAdminAuth = (req, res, next) => {
+  if (!req.session.admin) {
+    return res.status(401).json({ success: false, error: "Admin authentication required" });
+  }
+  next();
+};
+
 // -------- CREDIT SYSTEM --------
 
 const CREDIT_ACTIONS = {
@@ -74,33 +90,9 @@ const CREDIT_ACTIONS = {
   FIRST_REPORT: { credits: 25, description: 'First environmental report' },
   REPORT_VERIFIED: { credits: 15, description: 'Report verified by municipality' },
   REPORT_RESOLVED: { credits: 20, description: 'Reported issue resolved' },
-  REPORT_PROCESSED: { credits: 15, description: 'Waste processed successfully' },
-  REPORT_DISPOSED: { credits: 10, description: 'Final disposal completed' },
   WEEKLY_STREAK: { credits: 30, description: 'Active for 7 consecutive days' },
   MONTHLY_STREAK: { credits: 100, description: 'Active for 30 consecutive days' },
-  QUALITY_REPORT: { credits: 25, description: 'High-quality detailed report' },
-  HAZARDOUS_WASTE: { credits: 30, description: 'Hazardous waste reported' },
-  ELECTRONIC_WASTE: { credits: 25, description: 'Electronic waste reported' },
-  BULK_WASTE: { credits: 20, description: 'Bulk waste reported' },
-  RECYCLED_BONUS: { credits: 25, description: 'Waste successfully recycled' },
-  COMPOSTED_BONUS: { credits: 20, description: 'Organic waste composted' },
-  INCINERATED_BONUS: { credits: 10, description: 'Waste safely incinerated' }
-};
-
-const WASTE_CATEGORIES = {
-  'organic': { name: 'Organic/Wet Waste', credits: 10, icon: '🥬', guidance: 'Dispose in green bins. Can be composted for fertilizer.' },
-  'plastic': { name: 'Plastic/Dry Waste', credits: 15, icon: '♻️', guidance: 'Clean and dispose in blue bins. Most plastics can be recycled.' },
-  'electronic': { name: 'Electronic Waste', credits: 25, icon: '📱', guidance: 'Take to authorized e-waste collection centers. Contains valuable materials.' },
-  'medical': { name: 'Medical Waste', credits: 30, icon: '⚕️', guidance: 'Requires special disposal. Contact healthcare facilities or municipal office.' },
-  'construction': { name: 'Construction Debris', credits: 20, icon: '🏗️', guidance: 'Large amounts need municipal pickup. Small amounts in construction waste bins.' },
-  'hazardous': { name: 'Hazardous/Chemical', credits: 30, icon: '⚠️', guidance: 'Never mix with regular waste. Contact hazardous waste facility immediately.' }
-};
-
-const DISPOSAL_METHODS = {
-  'recycled': { credits: 25, description: 'Material successfully recycled' },
-  'composted': { credits: 20, description: 'Organic waste composted' },
-  'incinerated': { credits: 10, description: 'Waste safely incinerated' },
-  'landfilled': { credits: 5, description: 'Disposed in authorized landfill' }
+  QUALITY_REPORT: { credits: 25, description: 'High-quality detailed report' }
 };
 
 const BADGE_THRESHOLDS = {
@@ -169,7 +161,6 @@ function checkAndAwardBadges(userId) {
   const newBadges = [];
   
   Object.entries(BADGE_THRESHOLDS).forEach(([badgeKey, badge]) => {
-    // Check if user already has this badge
     if (userBadges.some(b => b.key === badgeKey)) return;
     
     let earned = false;
@@ -206,19 +197,11 @@ function checkAndAwardBadges(userId) {
 function calculateReportQuality(report) {
   let qualityScore = 0;
   
-  // Has photo
   if (report.photoUrl) qualityScore += 30;
-  
-  // Has GPS location
   if (report.lat && report.lng) qualityScore += 25;
-  
-  // Has description
   if (report.description && report.description.length > 10) qualityScore += 20;
-  
-  // Has address
   if (report.address && report.address.length > 5) qualityScore += 15;
   
-  // Description quality (length and keywords)
   if (report.description) {
     const envKeywords = ['waste', 'garbage', 'litter', 'pollution', 'dirty', 'cleanup', 'environment'];
     const hasKeywords = envKeywords.some(keyword => 
@@ -229,19 +212,42 @@ function calculateReportQuality(report) {
   
   return qualityScore;
 }
-const requireAuth = (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({ success: false, error: "Authentication required" });
-  }
-  next();
-};
-// Admin auth middleware
-const requireAdminAuth = (req, res, next) => {
-  if (!req.session.admin) {
-    return res.status(401).json({ success: false, error: "Admin authentication required" });
-  }
-  next();
-};
+
+function getNextAvailableBadges(userId) {
+  const creditData = userCredits.get(userId);
+  const userBadges = badges.get(userId);
+  const nextBadges = [];
+  
+  Object.entries(BADGE_THRESHOLDS).forEach(([badgeKey, badge]) => {
+    if (userBadges.some(b => b.key === badgeKey)) return;
+    
+    let progress = 0;
+    let target = 0;
+    
+    if (badge.credits) {
+      progress = creditData.totalCredits;
+      target = badge.credits;
+    } else if (badge.reports) {
+      progress = creditData.reportCount;
+      target = badge.reports;
+    } else if (badge.gps_reports) {
+      progress = creditData.gpsReportCount;
+      target = badge.gps_reports;
+    }
+    
+    if (progress < target) {
+      nextBadges.push({
+        ...badge,
+        key: badgeKey,
+        progress,
+        target,
+        percentage: Math.min(100, (progress / target) * 100)
+      });
+    }
+  });
+  
+  return nextBadges.sort((a, b) => b.percentage - a.percentage).slice(0, 3);
+}
 
 // -------- API ROUTES --------
 
@@ -332,7 +338,6 @@ app.post("/api/admin/signup", (req, res) => {
       return res.json({ success: false, error: "All fields are required" });
     }
 
-    // Simple organization code check (you can make this more secure)
     const validOrgCodes = ['MUNI2024', 'ADMIN123', 'GREENCITY'];
     if (!validOrgCodes.includes(organizationCode)) {
       return res.json({ success: false, error: "Invalid organization code" });
@@ -397,137 +402,10 @@ app.get('/api/admin/me', (req, res) => {
   }
 });
 
-// -------- CREDIT SYSTEM API --------
-
-// Get user credits and badges
-app.get("/api/credits", requireAuth, (req, res) => {
-  const userId = req.session.user.id;
-  initializeUserCredits(userId);
-  
-  const creditData = userCredits.get(userId);
-  const userBadges = badges.get(userId);
-  
-  res.json({
-    success: true,
-    credits: creditData,
-    badges: userBadges,
-    nextBadges: getNextAvailableBadges(userId)
-  });
-});
-
-// Get credit transaction history
-app.get("/api/credits/history", requireAuth, (req, res) => {
-  const userId = req.session.user.id;
-  const userTransactions = transactions
-    .filter(t => t.userId === userId)
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-  res.json({
-    success: true,
-    transactions: userTransactions
-  });
-});
-
-// Get leaderboard
-app.get("/api/leaderboard", (req, res) => {
-  const leaderboard = Array.from(userCredits.entries())
-    .map(([userId, creditData]) => {
-      const user = users.find(u => u.id === userId);
-      return {
-        userId,
-        name: user ? user.name : 'Unknown',
-        totalCredits: creditData.totalCredits,
-        reportCount: creditData.reportCount,
-        badges: badges.get(userId) || [],
-        badgeCount: (badges.get(userId) || []).length
-      };
-    })
-    .sort((a, b) => b.totalCredits - a.totalCredits)
-    .slice(0, 10); // Top 10
-    
-  res.json({
-    success: true,
-    leaderboard
-  });
-});
-
-// Redeem credits (voucher system)
-app.post("/api/credits/redeem", requireAuth, (req, res) => {
-  const userId = req.session.user.id;
-  const { rewardId, credits: redeemAmount } = req.body;
-  
-  initializeUserCredits(userId);
-  const creditData = userCredits.get(userId);
-  
-  if (creditData.availableCredits < redeemAmount) {
-    return res.json({ success: false, error: "Insufficient credits" });
-  }
-  
-  // Redeem credits
-  creditData.availableCredits -= redeemAmount;
-  creditData.redeemed += redeemAmount;
-  
-  // Create redemption transaction
-  const transaction = {
-    id: transactions.length + 1,
-    userId,
-    action: 'REDEMPTION',
-    credits: -redeemAmount,
-    description: `Redeemed for reward: ${rewardId}`,
-    reportId: null,
-    rewardId,
-    timestamp: new Date().toISOString()
-  };
-  transactions.push(transaction);
-  
-  res.json({
-    success: true,
-    message: "Credits redeemed successfully!",
-    remaining: creditData.availableCredits,
-    transaction
-  });
-});
-
-function getNextAvailableBadges(userId) {
-  const creditData = userCredits.get(userId);
-  const userBadges = badges.get(userId);
-  const nextBadges = [];
-  
-  Object.entries(BADGE_THRESHOLDS).forEach(([badgeKey, badge]) => {
-    if (userBadges.some(b => b.key === badgeKey)) return;
-    
-    let progress = 0;
-    let target = 0;
-    
-    if (badge.credits) {
-      progress = creditData.totalCredits;
-      target = badge.credits;
-    } else if (badge.reports) {
-      progress = creditData.reportCount;
-      target = badge.reports;
-    } else if (badge.gps_reports) {
-      progress = creditData.gpsReportCount;
-      target = badge.gps_reports;
-    }
-    
-    if (progress < target) {
-      nextBadges.push({
-        ...badge,
-        key: badgeKey,
-        progress,
-        target,
-        percentage: Math.min(100, (progress / target) * 100)
-      });
-    }
-  });
-  
-  return nextBadges.sort((a, b) => b.percentage - a.percentage).slice(0, 3);
-}
-
 // Submit report
 app.post("/api/report", requireAuth, upload.single("photo"), (req, res) => {
   try {
-    const { description, address, lat, lng, wasteCategory, wasteSize } = req.body;
+    const { description, address, lat, lng } = req.body;
     const userId = req.session.user.id;
     
     const report = {
@@ -541,12 +419,9 @@ app.post("/api/report", requireAuth, upload.single("photo"), (req, res) => {
       address: address || null,
       lat: lat ? parseFloat(lat) : null,
       lng: lng ? parseFloat(lng) : null,
-      wasteCategory: wasteCategory || 'organic',
-      wasteSize: wasteSize || 'small',
       photoUrl: req.file ? `/uploads/${req.file.filename}` : null,
       photoFilename: req.file ? req.file.filename : null,
       status: "Pending",
-      disposalMethod: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -563,28 +438,6 @@ app.post("/api/report", requireAuth, upload.single("photo"), (req, res) => {
     // Base credit for submitting report
     const baseReward = awardCredits(userId, 'REPORT_SUBMITTED', report.id);
     creditsEarned.push(baseReward);
-    
-    // Category-specific bonus credits
-    const categoryInfo = WASTE_CATEGORIES[wasteCategory];
-    if (categoryInfo && categoryInfo.credits > 10) {
-      const categoryKey = wasteCategory.toUpperCase() + '_WASTE';
-      if (CREDIT_ACTIONS[categoryKey]) {
-        const categoryReward = awardCredits(userId, categoryKey, report.id);
-        creditsEarned.push(categoryReward);
-      }
-    }
-    
-    // Size multiplier
-    const sizeMultipliers = { small: 1, medium: 1.5, large: 2 };
-    const sizeMultiplier = sizeMultipliers[wasteSize] || 1;
-    if (sizeMultiplier > 1) {
-      const bonusCredits = Math.floor((baseReward.credits * (sizeMultiplier - 1)));
-      const sizeReward = awardCredits(userId, null, report.id, bonusCredits);
-      if (sizeReward) {
-        sizeReward.transaction.description = `Large volume bonus (${wasteSize})`;
-        creditsEarned.push(sizeReward);
-      }
-    }
     
     // GPS bonus
     if (report.lat && report.lng) {
@@ -618,7 +471,6 @@ app.post("/api/report", requireAuth, upload.single("photo"), (req, res) => {
     res.json({ 
       success: true, 
       report,
-      disposalGuidance: categoryInfo ? categoryInfo.guidance : null,
       credits: {
         earned: totalEarned,
         total: creditData.totalCredits,
@@ -666,9 +518,9 @@ app.get("/api/reports", requireAdminAuth, (req, res) => {
 app.post("/api/report/:id/status", requireAdminAuth, (req, res) => {
   try {
     const reportId = parseInt(req.params.id);
-    const { status, disposalMethod } = req.body;
+    const { status } = req.body;
     
-    const validStatuses = ['Pending', 'Collected', 'Sorted', 'Processed', 'Disposed'];
+    const validStatuses = ['Pending', 'In Progress', 'Resolved'];
     if (!validStatuses.includes(status)) {
       return res.json({ success: false, error: "Invalid status" });
     }
@@ -682,27 +534,14 @@ app.post("/api/report/:id/status", requireAdminAuth, (req, res) => {
     reports[reportIndex].status = status;
     reports[reportIndex].updatedAt = new Date().toISOString();
     
-    // Update disposal method if provided
-    if (disposalMethod && DISPOSAL_METHODS[disposalMethod]) {
-      reports[reportIndex].disposalMethod = disposalMethod;
-    }
-    
     // Award credits based on status changes
     if (oldStatus !== status) {
       const userId = reports[reportIndex].userId;
       
-      if (status === 'Collected' && oldStatus === 'Pending') {
+      if (status === 'In Progress' && oldStatus === 'Pending') {
         awardCredits(userId, 'REPORT_VERIFIED', reportId);
-      } else if (status === 'Processed' && oldStatus === 'Sorted') {
-        awardCredits(userId, 'REPORT_PROCESSED', reportId);
-      } else if (status === 'Disposed') {
-        awardCredits(userId, 'REPORT_DISPOSED', reportId);
-        
-        // Award disposal method bonus
-        if (disposalMethod && DISPOSAL_METHODS[disposalMethod]) {
-          const disposalCredits = DISPOSAL_METHODS[disposalMethod].credits;
-          awardCredits(userId, null, reportId, disposalCredits);
-        }
+      } else if (status === 'Resolved') {
+        awardCredits(userId, 'REPORT_RESOLVED', reportId);
       }
     }
     
@@ -710,6 +549,95 @@ app.post("/api/report/:id/status", requireAdminAuth, (req, res) => {
   } catch (error) {
     res.json({ success: false, error: "Failed to update status" });
   }
+});
+
+// -------- CREDIT SYSTEM API --------
+
+// Get user credits and badges
+app.get("/api/credits", requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  initializeUserCredits(userId);
+  
+  const creditData = userCredits.get(userId);
+  const userBadges = badges.get(userId);
+  
+  res.json({
+    success: true,
+    credits: creditData,
+    badges: userBadges,
+    nextBadges: getNextAvailableBadges(userId)
+  });
+});
+
+// Get credit transaction history
+app.get("/api/credits/history", requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  const userTransactions = transactions
+    .filter(t => t.userId === userId)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+  res.json({
+    success: true,
+    transactions: userTransactions
+  });
+});
+
+// Get leaderboard
+app.get("/api/leaderboard", (req, res) => {
+  const leaderboard = Array.from(userCredits.entries())
+    .map(([userId, creditData]) => {
+      const user = users.find(u => u.id === userId);
+      return {
+        userId,
+        name: user ? user.name : 'Unknown',
+        totalCredits: creditData.totalCredits,
+        reportCount: creditData.reportCount,
+        badges: badges.get(userId) || [],
+        badgeCount: (badges.get(userId) || []).length
+      };
+    })
+    .sort((a, b) => b.totalCredits - a.totalCredits)
+    .slice(0, 10);
+    
+  res.json({
+    success: true,
+    leaderboard
+  });
+});
+
+// Redeem credits
+app.post("/api/credits/redeem", requireAuth, (req, res) => {
+  const userId = req.session.user.id;
+  const { rewardId, credits: redeemAmount } = req.body;
+  
+  initializeUserCredits(userId);
+  const creditData = userCredits.get(userId);
+  
+  if (creditData.availableCredits < redeemAmount) {
+    return res.json({ success: false, error: "Insufficient credits" });
+  }
+  
+  creditData.availableCredits -= redeemAmount;
+  creditData.redeemed += redeemAmount;
+  
+  const transaction = {
+    id: transactions.length + 1,
+    userId,
+    action: 'REDEMPTION',
+    credits: -redeemAmount,
+    description: `Redeemed for reward: ${rewardId}`,
+    reportId: null,
+    rewardId,
+    timestamp: new Date().toISOString()
+  };
+  transactions.push(transaction);
+  
+  res.json({
+    success: true,
+    message: "Credits redeemed successfully!",
+    remaining: creditData.availableCredits,
+    transaction
+  });
 });
 
 // Serve specific HTML files
@@ -746,5 +674,5 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`✅ GreenCredits server running at http://localhost:${PORT}`);
   console.log(`📁 Uploads directory: ${uploadsDir}`);
-  console.log(`🌿 Ready to accept waste reports!`);
+  console.log(`🌱 Ready to accept waste reports!`);
 });

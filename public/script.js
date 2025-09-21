@@ -484,9 +484,7 @@ async function submitReportForm(e) {
 
   const formData = new FormData(e.target);
   const photo = formData.get('photo');
-  const description = formData.get('description');
-  const address = formData.get('address');
-
+  
   if (!photo || photo.size === 0) {
     showNotification('Please select a photo', 'error');
     return;
@@ -499,7 +497,7 @@ async function submitReportForm(e) {
   }
 
   try {
-    showNotification('Submitting report...', 'info');
+    showNotification('Submitting waste report...', 'info');
     
     const response = await fetch("/api/report", {
       method: "POST",
@@ -510,12 +508,16 @@ async function submitReportForm(e) {
     const data = await response.json();
     
     if (data.success) {
-      // Show success with credit information
-      let message = 'Report submitted successfully!';
+      let message = 'Waste report submitted successfully!';
+      
+      // Show disposal guidance
+      if (data.disposalGuidance) {
+        showDisposalGuidance(data.disposalGuidance);
+      }
+      
       if (data.credits && data.credits.earned > 0) {
         message += ` You earned ${data.credits.earned} Green Credits! 🌱`;
         
-        // Show badge notifications
         if (data.credits.newBadges && data.credits.newBadges.length > 0) {
           setTimeout(() => {
             data.credits.newBadges.forEach(badge => {
@@ -524,7 +526,6 @@ async function submitReportForm(e) {
           }, 1000);
         }
         
-        // Show credit breakdown
         setTimeout(() => {
           showCreditBreakdown(data.credits.breakdown);
         }, 500);
@@ -533,14 +534,63 @@ async function submitReportForm(e) {
       showNotification(message, 'success');
       e.target.reset();
       currentLocation = null;
+      hideDisposalGuidance();
       loadMyReports();
-      loadUserCredits(); // Refresh credits display
+      loadUserCredits();
     } else {
       showNotification(data.error || 'Failed to submit report', 'error');
     }
   } catch (error) {
     console.error('Submit error:', error);
     showNotification('Network error. Please try again.', 'error');
+  }
+}
+
+function showDisposalGuidance(guidance) {
+  const guidanceDiv = document.getElementById('disposalGuidance');
+  const guidanceText = document.getElementById('guidanceText');
+  
+  if (guidanceDiv && guidanceText) {
+    guidanceText.textContent = guidance;
+    guidanceDiv.style.display = 'block';
+    guidanceDiv.style.background = '#dcfce7';
+    guidanceDiv.style.border = '2px solid #16a34a';
+  }
+}
+
+function hideDisposalGuidance() {
+  const guidanceDiv = document.getElementById('disposalGuidance');
+  if (guidanceDiv) {
+    guidanceDiv.style.display = 'none';
+  }
+}
+
+// Update waste category selection handler
+document.addEventListener('DOMContentLoaded', function() {
+  // ... existing initialization code ...
+
+  // Add waste category change handler
+  const wasteCategorySelect = document.getElementById('wasteCategory');
+  if (wasteCategorySelect) {
+    wasteCategorySelect.addEventListener('change', function() {
+      updateCategoryGuidance(this.value);
+    });
+  }
+});
+
+function updateCategoryGuidance(category) {
+  const guidanceMap = {
+    'organic': 'Dispose in green bins. Can be composted for fertilizer.',
+    'plastic': 'Clean and dispose in blue bins. Most plastics can be recycled.',
+    'electronic': 'Take to authorized e-waste collection centers. Contains valuable materials.',
+    'medical': 'Requires special disposal. Contact healthcare facilities or municipal office.',
+    'construction': 'Large amounts need municipal pickup. Small amounts in construction waste bins.',
+    'hazardous': 'Never mix with regular waste. Contact hazardous waste facility immediately.'
+  };
+  
+  const guidance = guidanceMap[category];
+  if (guidance) {
+    showDisposalGuidance(guidance);
   }
 }
 
@@ -668,9 +718,21 @@ function displayReports(reports, container) {
     return;
   }
 
+  const categoryIcons = {
+    'organic': '🥬', 'plastic': '♻️', 'electronic': '📱',
+    'medical': '⚕️', 'construction': '🏗️', 'hazardous': '⚠️'
+  };
+
   const reportsHTML = reports.map(report => `
     <div class="report-card" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: white;">
       <div class="report-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+        <div class="report-category" style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.5rem;">${categoryIcons[report.wasteCategory] || '🗑️'}</span>
+          <div>
+            <div style="font-weight: 600; text-transform: capitalize;">${report.wasteCategory || 'General'} Waste</div>
+            <div style="font-size: 0.8rem; color: #6b7280;">Size: ${report.wasteSize || 'small'}</div>
+          </div>
+        </div>
         <div class="report-status">
           <span class="status-badge status-${report.status.toLowerCase().replace(' ', '-')}" 
                 style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; 
@@ -678,11 +740,12 @@ function displayReports(reports, container) {
             ${report.status}
           </span>
         </div>
-        <div class="report-date" style="color: #6b7280; font-size: 14px;">
-          ${formatDate(report.createdAt)}
-        </div>
       </div>
       
+      <div class="report-date" style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">
+        Submitted: ${formatDate(report.createdAt)}
+      </div>
+
       ${report.photoUrl ? `
         <div class="report-photo" style="margin-bottom: 12px;">
           <img src="${report.photoUrl}" alt="Report photo" style="width: 100%; max-width: 200px; height: auto; border-radius: 6px;">
@@ -696,14 +759,20 @@ function displayReports(reports, container) {
       ` : ''}
       
       ${report.address ? `
-        <div class="report-location" style="color: #6b7280; font-size: 14px;">
+        <div class="report-location" style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
           <strong>Location:</strong> ${report.address}
         </div>
       ` : ''}
       
       ${report.lat && report.lng ? `
-        <div class="report-coordinates" style="color: #6b7280; font-size: 12px;">
+        <div class="report-coordinates" style="color: #6b7280; font-size: 12px; margin-bottom: 8px;">
           Coordinates: ${report.lat.toFixed(6)}, ${report.lng.toFixed(6)}
+        </div>
+      ` : ''}
+
+      ${report.disposalMethod ? `
+        <div class="disposal-method" style="background: #f0fdf4; padding: 8px; border-radius: 6px; font-size: 0.9rem;">
+          <strong>Disposal Method:</strong> ${report.disposalMethod} ✅
         </div>
       ` : ''}
     </div>

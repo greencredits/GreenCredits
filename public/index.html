@@ -151,7 +151,8 @@
   </section>
 
   <!-- CITIZEN MINI-APP -->
- <section id="citizen" class="section">
+ <!-- CITIZEN MINI-APP -->
+<section id="citizen" class="section">
   <div class="container">
     <h2 class="section-title">Citizen App — Try the Flow</h2>
 
@@ -170,8 +171,27 @@
               <input type="file" id="reportPhoto" name="photo" class="field" accept="image/*" required>
             </label>
 
+            <label>Waste Category
+              <select id="wasteCategory" name="wasteCategory" class="field" required>
+                <option value="organic">🥬 Organic/Wet Waste (+10 credits)</option>
+                <option value="plastic">♻️ Plastic/Dry Waste (+15 credits)</option>
+                <option value="electronic">📱 Electronic Waste (+25 credits)</option>
+                <option value="medical">⚕️ Medical Waste (+30 credits)</option>
+                <option value="construction">🏗️ Construction Debris (+20 credits)</option>
+                <option value="hazardous">⚠️ Hazardous/Chemical (+30 credits)</option>
+              </select>
+            </label>
+
+            <label>Waste Size
+              <select id="wasteSize" name="wasteSize" class="field" required>
+                <option value="small">Small (Garbage bag size)</option>
+                <option value="medium">Medium (Cart load) - 1.5x credits</option>
+                <option value="large">Large (Truck required) - 2x credits</option>
+              </select>
+            </label>
+
             <label>Location
-              <input type="text" id="reportLocation" class="field" placeholder="Enter address (or current location)">
+              <input type="text" id="reportLocation" name="address" class="field" placeholder="Enter address (or current location)">
               <div style="margin-top:6px;">
                 <button type="button" id="useLocationBtn" class="btn btn-outline">Use My Location</button>
                 <button type="button" id="clearLocationBtn" class="btn btn-ghost">Clear</button>
@@ -179,7 +199,7 @@
             </label>
 
             <label>Description
-              <textarea id="reportDesc" class="field" rows="3" placeholder="Describe the waste issue (detailed descriptions earn bonus credits!)"></textarea>
+              <textarea id="reportDesc" name="description" class="field" rows="3" placeholder="Describe the waste issue (detailed descriptions earn bonus credits!)"></textarea>
             </label>
 
             <div class="form-actions">
@@ -187,13 +207,19 @@
               <button class="btn btn-outline" type="button" onclick="clearReportForm()">Clear</button>
             </div>
 
+            <div id="disposalGuidance" style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 0.9rem; display: none;">
+              <strong>Disposal Guidance:</strong>
+              <p id="guidanceText"></p>
+            </div>
+
             <div style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 0.9rem;">
-              <strong>Earn Green Credits:</strong>
+              <strong>How Credits Work:</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>+10 credits for photo report</li>
-                <li>+5 credits with GPS location</li>
-                <li>+25 credits for quality description</li>
-                <li>+25 credits for your first report</li>
+                <li>Choose correct waste category for bonus credits</li>
+                <li>Larger waste volumes earn multiplier bonuses</li>
+                <li>GPS location adds +5 credits</li>
+                <li>Detailed descriptions earn +25 credits</li>
+                <li>Additional credits when municipality processes your report</li>
               </ul>
             </div>
           </form>
