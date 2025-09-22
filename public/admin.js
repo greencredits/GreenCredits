@@ -200,7 +200,11 @@ function renderReports(reportsData) {
           ${report.wasteSize ? `<p><strong>Size:</strong> ${report.wasteSize}</p>` : ''}
           ${report.description ? `<p><strong>Description:</strong> ${report.description}</p>` : ''}
           ${report.address ? `<p><strong>Location:</strong> ${report.address}</p>` : ''}
-          ${report.lat && report.lng ? `<p><strong>GPS:</strong> ${report.lat.toFixed(6)}, ${report.lng.toFixed(6)}</p>` : ''}
+          ${report.lat && report.lng ? `
+            <p><strong>GPS:</strong> ${report.lat.toFixed(6)}, ${report.lng.toFixed(6)}
+              <button onclick="openMap(${report.lat}, ${report.lng})" style="margin-left: 10px; padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">View on Map</button>
+            </p>
+          ` : ''}
           ${report.disposalMethod ? `<p><strong>Disposed via:</strong> ${report.disposalMethod}</p>` : ''}
         </div>
         
@@ -311,6 +315,11 @@ async function updateDisposal(reportId, disposalMethod) {
   }
 }
 
+function openMap(lat, lng) {
+  const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}&zoom=17`;
+  window.open(googleMapsUrl, '_blank');
+}
+
 function viewImage(imageUrl) {
   window.open(imageUrl, '_blank');
 }
@@ -351,3 +360,4 @@ window.loadReports = loadReports;
 window.updateStatus = updateStatus;
 window.updateDisposal = updateDisposal;
 window.viewImage = viewImage;
+window.openMap = openMap;
